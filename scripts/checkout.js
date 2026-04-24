@@ -11,9 +11,11 @@ let element = document.querySelector(".js-order-summary");
 let cartProducts = JSON.parse(localStorage.getItem("storeproducts"));
 let elementQuantity = document.querySelector(".js-items");
 let items = 0;
+let shipping = JSON.parse(localStorage.getItem("shipping")) || {};
 
 function update() {
     localStorage.setItem("storeproducts", JSON.stringify(cartProducts));
+    localStorage.setItem("shipping", JSON.stringify(shipping));
     elementQuantity.innerHTML = `${items} items`
 }
 if (cartProducts) {
@@ -41,11 +43,21 @@ let filterproducts = products.filter((product) => {
     return matchproducts(product)
 });
 
+filterproducts.forEach((product, index) => {
+    if (!shipping[`delivery-option-${index}`])
+        shipping[`delivery-option-${index}`] = "9";
+});
+update();
+
+
+
+
+
 function display() {
     filterproducts.forEach((product, index) => {
         let quantity = cartProducts[product.id];
         element.innerHTML += `
-        <div class="cart-item-container js-container-${index}">
+        <div class="cart-item-container js-container-${index} " >
             <div class="delivery-date">
                 Delivery date: Tuesday, June 21
             </div>
@@ -65,49 +77,13 @@ function display() {
                         <span class="update-quantity-link link-primary js-update">
             Update
           </span>
-                        <span class="delete-quantity-link link-primary js-delete">
+                        <span class="delete-quantity-link link-primary js-delete" data-id="${product.id}">
             Delete
           </span>
                     </div>
                 </div>
-                <div class="delivery-options">
-                    <div class="delivery-options-title">
-                        Choose a delivery option:
-                    </div>
-                    <div class="delivery-option">
-                        <input type="radio" checked class="delivery-option-input" name="delivery-option-${index}">
-                        <div>
-                            <div class="delivery-option-date">
-                                Tuesday, June 21
-                            </div>
-                            <div class="delivery-option-price">
-                                FREE Shipping
-                            </div>
-                        </div>
-                    </div>
-                    <div class="delivery-option">
-                        <input type="radio" class="delivery-option-input" name="delivery-option-${index}">
-                        <div>
-                            <div class="delivery-option-date">
-                                Wednesday, June 15
-                            </div>
-                            <div class="delivery-option-price">
-                                $4.99 - Shipping
-                            </div>
-                        </div>
-                    </div>
-                    <div class="delivery-option">
-                        <input type="radio" class="delivery-option-input" name="delivery-option-${index}">
-                        <div>
-                            <div class="delivery-option-date">
-                                Monday, June 13
-                            </div>
-                            <div class="delivery-option-price">
-                                $9.99 - Shipping
-                            </div>
-                        </div>
-                    </div>
-                </div>
+              ${dilveryoption(index)}
+
             </div>
         </div>
         `;
@@ -116,25 +92,87 @@ function display() {
 }
 display();
 
-document.querySelectorAll(".js-delete").forEach((dbtn, index) => {
-    dbtn.addEventListener("click", () => {
-        let delIndex;
-        let delElement = document.querySelector(`.js-container-${index}`);
-        filterproducts.forEach((product, ind) => {
-            if (ind === index) {
-                delIndex = ind;
-                items = items - cartProducts[product.id];
-                delete cartProducts[product.id];
-                update();
-            }
-        });
-        if (delIndex)
-            filterproducts.splice(delIndex, 1);
+function cartvalue(index, value) {
 
+    if (shipping[`delivery-option-${index}`] == value)
+        return true;
+    else
+        return false;
+}
+
+function dilveryoption(index) {
+    const html = `
+    <div class="delivery-options">
+        <div class="delivery-options-title">
+            Choose a delivery option:
+        </div>
+        <div class="delivery-option">
+            <input type="radio"  class="delivery-option-input" ${cartvalue(index, 9) ? "checked" : ""} name="delivery-option-${index}" value="9">
+            <div>
+                <div class="delivery-option-date">
+                    ${dayjs().add(9,'day').format('dddd, MMMM D')}
+                </div>
+                <div class="delivery-option-price">
+                    FREE Shipping
+                </div>
+            </div>
+        </div>
+        <div class="delivery-option">
+            <input type="radio" class="delivery-option-input" name="delivery-option-${index}"  ${cartvalue(index, 3) ? "checked" : ""} value="3">
+            <div>
+                <div class="delivery-option-date">
+                   ${dayjs().add(3,'day').format('dddd, MMMM D')}
+                </div>
+                <div class="delivery-option-price">
+                    $4.99 - Shipping
+                </div>
+            </div>
+        </div>
+        <div class="delivery-option">
+            <input type="radio" class="delivery-option-input" name="delivery-option-${index}"  ${cartvalue(index, 1) ? "checked" : ""} value="1">
+            <div>
+                <div class="delivery-option-date">
+                  ${dayjs().add(1,'day').format('dddd, MMMM D')}
+                </div>
+                <div class="delivery-option-price">
+                    $9.99 - Shipping
+                </div>
+            </div>
+        </div>
+    </div>
+    `
+    return html;
+
+}
+
+/*document.querySelectorAll(".js-delete").forEach((dbtn, index) => {
+    dbtn.addEventListener("click", () => {
+        let delElement = document.querySelector(`.js-container-${index}`);
+        let product = filterproducts[index];
+        items = items - cartProducts[product.id];
+        delete cartProducts[product.id];
+        filterproducts.splice(index, 1);
+        update();
         delElement.remove();
-        display();
+        // display();
     });
 
+});*/
+
+document.body.addEventListener("click", (e) => {
+    if (e.target.classList.contains("js-delete")) {
+        const btn = e.target;
+        const id = btn.dataset.id;
+        let index = filterproducts.findIndex(p => p.id == id);
+        let delElement = btn.closest(`.cart-item-container`);
+        let product = filterproducts[index];
+        items = items - cartProducts[product.id];
+        delete cartProducts[product.id];
+        filterproducts.splice(index, 1);
+        update();
+        delElement.remove();
+        //display();
+    }
 });
 document.querySelectorAll(".js-update").forEach((ubtn, index) => {
 
@@ -220,3 +258,79 @@ document.querySelectorAll(".js-update").forEach((ubtn, index) => {
     })
 
 });*/
+document.querySelectorAll(".delivery-date").forEach((dateelement, i) => {
+    let radios = document.querySelectorAll(`input[name="delivery-option-${i}"]`);
+    radios.forEach(radio => {
+        let selected = document.querySelector(`input[name="delivery-option-${i}"]:checked`);
+        dateelement.innerHTML = `${dayjs().add(Number(selected.value), 'day').format('dddd, MMMM D')}`;
+        radio.addEventListener('change', () => {
+            selected = document.querySelector(`input[name="delivery-option-${i}"]:checked`);
+            dateelement.innerHTML = `${dayjs().add(Number(selected.value), 'day').format('dddd, MMMM D')}`;
+            shipping[`delivery-option-${i}`] = Number(selected.value);
+            update();
+            calculatemoney();
+            orderdisplay();
+        });
+    });
+
+});
+console.log(typeof cartProducts);
+
+
+//------------------------------------------------------------------------------------------------------------------
+let itemMoney = 0;
+let shippingMoney = 0;
+let total = 0;
+let tax = 0;
+let grandTotal = 0;
+
+function calculatemoney() {
+    itemMoney = shippingMoney = total = tax = grandTotal = 0;
+    filterproducts.forEach((product, index) => {
+        itemMoney += product.priceCents;
+        let value = shipping[`delivery-option-${index}`];
+        if (value == 3)
+            shippingMoney += 499;
+        else if (value == 1)
+            shippingMoney += 999;
+    });
+    total = shippingMoney + itemMoney;
+    tax = Math.round(total * 0.10);
+    grandTotal = total + tax;
+
+}
+
+
+function orderdisplay() {
+    let ordersummary = document.querySelector(".payment-summary");
+    ordersummary.innerHTML = `
+    <div class="payment-summary-title">
+        Order Summary
+    </div>
+    <div class="payment-summary-row">
+        <div>Items ${items}:</div>
+        <div class="payment-summary-money">$${(itemMoney/100).toFixed(2)}</div>
+    </div>
+    <div class="payment-summary-row">
+        <div>Shipping &amp; handling:</div>
+        <div class="payment-summary-money">$${(shippingMoney/100).toFixed(2)}</div>
+    </div>
+    <div class="payment-summary-row subtotal-row">
+        <div>Total before tax:</div>
+        <div class="payment-summary-money">$${(total/100).toFixed(2)}</div>
+    </div>
+    <div class="payment-summary-row">
+        <div>Estimated tax (10%):</div>
+        <div class="payment-summary-money">$${(tax/100).toFixed(2)}</div>
+    </div>
+    <div class="payment-summary-row total-row">
+        <div>Order total:</div>
+        <div class="payment-summary-money">$${(grandTotal/100).toFixed(2)}</div>
+    </div>
+    <button class="place-order-button button-primary">
+    Place your order
+    </button>
+ `
+}
+calculatemoney();
+orderdisplay();
