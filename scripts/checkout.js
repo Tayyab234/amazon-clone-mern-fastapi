@@ -169,8 +169,11 @@ document.body.addEventListener("click", (e) => {
         items = items - cartProducts[product.id];
         delete cartProducts[product.id];
         filterproducts.splice(index, 1);
+        delete shipping[`delivery-option-${index}`]
         update();
         delElement.remove();
+        calculatemoney();
+        orderdisplay();
         //display();
     }
 });
@@ -210,7 +213,8 @@ document.querySelectorAll(".js-update").forEach((ubtn, index) => {
 
             let product = filterproducts[index];
             cartProducts[product.id] = newval;
-
+            calculatemoney();
+            orderdisplay();
             update();
 
             element2.innerHTML = `
@@ -287,7 +291,7 @@ let grandTotal = 0;
 function calculatemoney() {
     itemMoney = shippingMoney = total = tax = grandTotal = 0;
     filterproducts.forEach((product, index) => {
-        itemMoney += product.priceCents;
+        itemMoney += (product.priceCents * cartProducts[product.id]);
         let value = shipping[`delivery-option-${index}`];
         if (value == 3)
             shippingMoney += 499;
