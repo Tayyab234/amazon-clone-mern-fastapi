@@ -334,10 +334,6 @@ function orderdisplay() {
   <button class="place-order-button button-primary js-placeOrder">
     Place your order
   </button>
-
-   
-   
-   
    
  `
 }
@@ -355,31 +351,40 @@ orderdisplay();
 condition();
 //--------------------------------------------------------------------------------------------------------------
 
-document.querySelector(".js-placeOrder").addEventListener('click', async() => {
+document.body.addEventListener('click', async(e) => {
+    if (!e.target.classList.contains('js-placeOrder')) return;
+
     let orderobject = {};
-    let order_id = JSON.parse(localStorage.getItem('order_id')) || []
+    let order_id = JSON.parse(localStorage.getItem('order_id')) || [];
     let order = [];
+
     filterproducts.forEach((product, index) => {
         let value = shipping[`delivery-option-${index}`];
+
         let object = {
-            'id': product.id,
-            'name': product.name,
-            'quantity': cartProducts[product.id],
-            'img': product.image,
-            'arrival': dayjs().add(value, 'day').format('MMMM D')
+            id: product.id,
+            name: product.name,
+            quantity: cartProducts[product.id],
+            img: product.image,
+            arrival: dayjs().add(value, 'day').format('MMMM D')
         };
+
         let ele = document.querySelector(`.js-container-${index}`);
-        ele.remove();
+        if (ele) ele.remove();
+
         delete shipping[`delivery-option-${index}`];
         delete cartProducts[product.id];
-        order.push(object)
+
+        order.push(object);
     });
+
     items = 0;
     filterproducts = [];
     update();
-    orderobject['products'] = order;
-    orderobject['orderplaced'] = dayjs().format('MMMM D');
-    orderobject['total'] = (grandTotal / 100).toFixed(2);
+
+    orderobject.products = order;
+    orderobject.orderplaced = dayjs().format('MMMM D');
+    orderobject.total = (grandTotal / 100).toFixed(2);
 
     let response = await fetch('http://127.0.0.1:8000/items/', {
         method: 'POST',
@@ -388,11 +393,13 @@ document.querySelector(".js-placeOrder").addEventListener('click', async() => {
         },
         body: JSON.stringify(orderobject)
     });
+
     const data = await response.json();
 
     order_id.push(data.order_id);
     console.log(data.order_id);
-    localStorage.setItem('order_id', JSON.stringify(order_id));
-    window.location.href = "orders.html";
 
+    localStorage.setItem('order_id', JSON.stringify(order_id));
+
+    window.location.href = "orders.html";
 });
